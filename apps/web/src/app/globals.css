@@ -1,0 +1,275 @@
+@import "tailwindcss";
+
+/* Dark mode follows an explicit .dark class on <html> (set before paint by the theme script). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────── Design tokens ───────────────────────────
+   WINDGUARD — industrial operations palette.
+   Navy shell, slate structure, blue for primary action, teal as the operational accent.
+   Status hues are validated for colour-vision deficiency (light + dark steps). */
+:root {
+  color-scheme: light;
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-2: #f9fafc;
+  --surface-sunken: #eef2f6;
+  --fg: #0f1b2d;
+  --fg-muted: #526175;
+  --fg-subtle: #7b8aa0;
+  --line: #e2e7ee;
+  --line-strong: #cdd5e0;
+
+  --navy: #111c2d;
+  --navy-2: #1a2739;
+  --slate: #26364a;
+
+  --primary: #2563eb; /* button fill: AA contrast with white */
+  --primary-hover: #1d4fd8;
+  --primary-soft: #e8f0fe;
+  --primary-ink: #1d4ed8;
+  --brand-blue: #3b82f6;
+  --accent: #0f9f8f; /* teal */
+  --accent-soft: #e2f5f2;
+
+  --success: #0f8a5f;
+  --success-soft: #e3f4ec;
+  --warning: #b45309;
+  --warning-soft: #fdf1df;
+  --danger: #c63434;
+  --danger-soft: #fce8e8;
+  --info: #2563eb;
+  --info-soft: #e8f0fe;
+
+  /* Attendance status (chart + badge marks) */
+  --st-present: #0f9f8f;
+  --st-absent: #e04b4b;
+  --st-leave: #7c5cd6;
+  --st-half: #e59a0b;
+  --st-duty: #2a78d6;
+  --st-incomplete: #eb6834;
+  --st-off: #94a3b8;
+
+  /* Shift series */
+  --sh-1: #0f9f8f;
+  --sh-2: #2a78d6;
+  --sh-3: #eb6834;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --shadow-sm: 0 1px 2px rgb(15 27 45 / 0.06);
+  --shadow-md: 0 4px 16px -4px rgb(15 27 45 / 0.12), 0 1px 3px rgb(15 27 45 / 0.06);
+  --shadow-lg: 0 18px 48px -12px rgb(15 27 45 / 0.28);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0a111c;
+  --surface: #111a2b;
+  --surface-2: #142034;
+  --surface-sunken: #0d1524;
+  --fg: #e6edf7;
+  --fg-muted: #9aabc2;
+  --fg-subtle: #6f839d;
+  --line: #213049;
+  --line-strong: #2d3f5c;
+
+  --navy: #0b1320;
+  --navy-2: #121d2f;
+  --slate: #1d2b40;
+
+  --primary: #3b82f6;
+  --primary-hover: #5a95f7;
+  --primary-soft: #16294a;
+  --primary-ink: #8db6fa;
+  --accent: #1ba89a;
+  --accent-soft: #10302e;
+
+  --success: #34b98a;
+  --success-soft: #0f2d25;
+  --warning: #e0a03c;
+  --warning-soft: #33250f;
+  --danger: #ef7070;
+  --danger-soft: #3a1719;
+  --info: #6aa2f8;
+  --info-soft: #16294a;
+
+  --st-present: #1ba89a;
+  --st-absent: #e66767;
+  --st-leave: #9085e9;
+  --st-half: #c98500;
+  --st-duty: #3987e5;
+  --st-incomplete: #d95926;
+  --st-off: #64748b;
+
+  --sh-1: #1ba89a;
+  --sh-2: #3987e5;
+  --sh-3: #d95926;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 20px -6px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 20px 50px -12px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-manrope), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sunken: var(--surface-sunken);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-slate: var(--slate);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-st-present: var(--st-present);
+  --color-st-absent: var(--st-absent);
+  --color-st-leave: var(--st-leave);
+  --color-st-half: var(--st-half);
+  --color-st-duty: var(--st-duty);
+  --color-st-incomplete: var(--st-incomplete);
+  --color-st-off: var(--st-off);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(0.8);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+  * {
+    border-color: var(--line);
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand-blue) 25%, transparent);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.5;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Overlay motion driven by Radix data-state (kept short; never blocks interaction). */
+@keyframes wg-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes wg-fade-out { from { opacity: 1 } to { opacity: 0 } }
+@keyframes wg-pop-in { from { opacity: 0; transform: translate(-50%, -48%) scale(0.97) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+@keyframes wg-pop-out { from { opacity: 1; transform: translate(-50%, -50%) scale(1) } to { opacity: 0; transform: translate(-50%, -48%) scale(0.97) } }
+@keyframes wg-slide-right-in { from { transform: translateX(100%) } to { transform: translateX(0) } }
+@keyframes wg-slide-right-out { from { transform: translateX(0) } to { transform: translateX(100%) } }
+@keyframes wg-slide-left-in { from { transform: translateX(-100%) } to { transform: translateX(0) } }
+@keyframes wg-slide-left-out { from { transform: translateX(0) } to { transform: translateX(-100%) } }
+@keyframes wg-slide-up-in { from { transform: translateY(100%) } to { transform: translateY(0) } }
+@keyframes wg-slide-up-out { from { transform: translateY(0) } to { transform: translateY(100%) } }
+@keyframes wg-menu-in { from { opacity: 0; transform: translateY(-4px) scale(0.98) } to { opacity: 1; transform: none } }
+
+.wg-overlay[data-state="open"] { animation: wg-fade-in 160ms ease-out }
+.wg-overlay[data-state="closed"] { animation: wg-fade-out 120ms ease-in }
+.wg-dialog[data-state="open"] { animation: wg-pop-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) }
+.wg-dialog[data-state="closed"] { animation: wg-pop-out 120ms ease-in }
+.wg-sheet-right[data-state="open"] { animation: wg-slide-right-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) }
+.wg-sheet-right[data-state="closed"] { animation: wg-slide-right-out 160ms ease-in }
+.wg-sheet-left[data-state="open"] { animation: wg-slide-left-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) }
+.wg-sheet-left[data-state="closed"] { animation: wg-slide-left-out 160ms ease-in }
+.wg-sheet-bottom[data-state="open"] { animation: wg-slide-up-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) }
+.wg-sheet-bottom[data-state="closed"] { animation: wg-slide-up-out 160ms ease-in }
+.wg-menu[data-state="open"] { animation: wg-menu-in 130ms ease-out }

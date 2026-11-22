@@ -1,0 +1,12 @@
+node_modules
+.devdb
+dist
+.next
+.env
+*.tsbuildinfo
+apps/api/generated
+apps/api/uploads
+.devdb.log
+.api.log
+.next-prod
+apps/api/src/generated

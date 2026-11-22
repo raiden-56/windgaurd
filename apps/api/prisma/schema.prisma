@@ -1,0 +1,746 @@
+// WINDGUARD data model
+// Conventions: every tenant-owned table carries organizationId; all instants are UTC
+// (timestamptz); calendar days (work dates) are stored as DATE in the site's timezone.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Tenancy & access ─────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  legalName String?
+  address   String?
+  timezone  String   @default("Asia/Kolkata")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settings          OrganizationSettings?
+  users             User[]
+  employees         Employee[]
+  projects          Project[]
+  sites             Site[]
+  shifts            Shift[]
+  rosterEntries     RosterEntry[]
+  attendance        AttendanceRecord[]
+  registers         AttendanceRegister[]
+  corrections       AttendanceCorrection[]
+  handovers         ShiftHandover[]
+  leaveRecords      LeaveRecord[]
+  holidays          Holiday[]
+  weeklyOffRules    WeeklyOffRule[]
+  musterRolls       MusterRoll[]
+  gateEntries       GateEntry[]
+  importJobs        ImportJob[]
+  exportJobs        ExportJob[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  syncRecords       OfflineSyncRecord[]
+  designations      Designation[]
+  departments       Department[]
+}
+
+/// Organization-specific attendance rules (one row per organization).
+model OrganizationSettings {
+  organizationId         String       @id
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  employeeIdPrefix       String       @default("EMP")
+  employeeIdPadding      Int          @default(4)
+  overtimeEnabled        Boolean      @default(true)
+  /// Minutes worked beyond scheduled net duration before overtime starts counting.
+  overtimeThresholdMins  Int          @default(30)
+  /// Worked minutes below which a checked-out record becomes a half day.
+  halfDayThresholdMins   Int          @default(240)
+  /// Hours after scheduled shift end before an open check-in is flagged incomplete.
+  incompleteAfterHours   Int          @default(2)
+  /// Whether leave days count in the attendance-percentage denominator.
+  countLeaveInPercentage Boolean      @default(false)
+  requireRegisterApproval Boolean     @default(true)
+  /// Status → abbreviation map for the muster roll, e.g. {"PRESENT":"P"}.
+  abbreviations          Json
+  updatedAt              DateTime     @updatedAt
+}
+
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  SUPERVISOR
+  VIEWER
+}
+
+model User {
+  id               String    @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  email            String    @unique
+  fullName         String
+  phone            String?
+  role             Role
+  /// Fine-grained grants beyond the role defaults, e.g. "roster.manage", "attendance.editHistorical".
+  extraPermissions String[]  @default([])
+  passwordHash     String?
+  isActive         Boolean   @default(true)
+  /// Bumped to invalidate every outstanding session for this user.
+  sessionVersion   Int       @default(1)
+  lastLoginAt      DateTime?
+  /// Last authenticated request (throttled); used to flag supervisor devices that went quiet.
+  lastSeenAt       DateTime?
+  recoveryCodeHash String?
+  recoveryExpires  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  passkeys          PasskeyCredential[]
+  siteAssignments   SupervisorSiteAssignment[]
+  shiftsSupervised  Shift[]               @relation("ShiftSupervisor")
+  markedAttendance  AttendanceRecord[]    @relation("MarkedBy")
+  requestedCorrections AttendanceCorrection[] @relation("CorrectionRequester")
+  reviewedCorrections  AttendanceCorrection[] @relation("CorrectionReviewer")
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
+
+  @@index([organizationId, role])
+}
+
+model PasskeyCredential {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// base64url credential ID
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  deviceType   String?
+  backedUp     Boolean   @default(false)
+  name         String
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model WebAuthnChallenge {
+  id        String   @id @default(cuid())
+  challenge String
+  userId    String?
+  purpose   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+// ───────────────────────────── Sites & structure ─────────────────────────────
+
+model Project {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  code           String
+  description    String?
+  capacityMw     Decimal? @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sites          Site[]
+
+  @@unique([organizationId, code])
+}
+
+model Site {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
+  name           String
+  code           String
+  address        String?
+  state          String?
+  district       String?
+  timezone       String   @default("Asia/Kolkata")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  locations      Location[]
+  supervisors    SupervisorSiteAssignment[]
+  employees      Employee[]
+  shifts         Shift[]
+  rosterEntries  RosterEntry[]
+  attendance     AttendanceRecord[]
+  registers      AttendanceRegister[]
+  handovers      ShiftHandover[]
+  holidays       Holiday[]
+  gateEntries    GateEntry[]
+  musterRolls    MusterRoll[]
+  siteHistory    EmployeeSiteAssignment[]
+
+  @@unique([organizationId, code])
+}
+
+/// Deployment points inside a site (security gate, control room, turbine area, substation).
+model Location {
+  id        String   @id @default(cuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name      String
+  kind      String   @default("DEPLOYMENT_POINT")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  employees     Employee[]
+  rosterEntries RosterEntry[]
+
+  @@unique([siteId, name])
+}
+
+model SupervisorSiteAssignment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, siteId])
+}
+
+// ───────────────────────────── Employees ─────────────────────────────
+
+model Designation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  employees      Employee[]
+
+  @@unique([organizationId, name])
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  employees      Employee[]
+
+  @@unique([organizationId, name])
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  RESIGNED
+  TERMINATED
+}
+
+enum EmploymentType {
+  PERMANENT
+  CONTRACT
+  TEMPORARY
+  TRAINEE
+}
+
+/// Workers. They never sign in; supervisors record attendance on their behalf.
+model Employee {
+  id               String           @id @default(cuid())
+  organizationId   String
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  employeeCode     String
+  fullName         String
+  phone            String?
+  address          String?
+  dateOfBirth      DateTime?        @db.Date
+  emergencyContact String?
+  designationId    String?
+  designation      Designation?     @relation(fields: [designationId], references: [id])
+  departmentId     String?
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  joiningDate      DateTime?        @db.Date
+  employmentType   EmploymentType   @default(CONTRACT)
+  status           EmploymentStatus @default(ACTIVE)
+  siteId           String?
+  site             Site?            @relation(fields: [siteId], references: [id])
+  locationId       String?
+  location         Location?        @relation(fields: [locationId], references: [id])
+  defaultShiftId   String?
+  defaultShift     Shift?           @relation("DefaultShift", fields: [defaultShiftId], references: [id])
+  /// 0 = Sunday … 6 = Saturday; null = no fixed weekly off
+  weeklyOffDay     Int?
+  photoUrl         String?
+  remarks          String?
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  siteHistory      EmployeeSiteAssignment[]
+  rosterEntries    RosterEntry[]
+  attendance       AttendanceRecord[]
+  leaveRecords     LeaveRecord[]
+  documents        EmployeeDocument[]
+
+  @@unique([organizationId, employeeCode])
+  @@index([organizationId, siteId, status])
+  @@index([organizationId, fullName])
+}
+
+model EmployeeSiteAssignment {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  siteId     String
+  site       Site      @relation(fields: [siteId], references: [id])
+  startDate  DateTime  @db.Date
+  endDate    DateTime? @db.Date
+  note       String?
+  createdAt  DateTime  @default(now())
+
+  @@index([employeeId])
+}
+
+model EmployeeDocument {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  mimeType   String
+  sizeBytes  Int
+  storageKey String
+  createdAt  DateTime @default(now())
+}
+
+// ───────────────────────────── Shifts & roster ─────────────────────────────
+
+model Shift {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  siteId          String
+  site            Site     @relation(fields: [siteId], references: [id])
+  name            String
+  code            String
+  /// Minutes after local midnight; endMinute <= startMinute means the shift ends the next day.
+  startMinute     Int
+  endMinute       Int
+  breakMinutes    Int      @default(0)
+  graceMinutes    Int      @default(10)
+  requiredWorkers Int      @default(1)
+  supervisorId    String?
+  supervisor      User?    @relation("ShiftSupervisor", fields: [supervisorId], references: [id])
+  /// 0 = Sunday … 6 = Saturday
+  activeDays      Int[]    @default([0, 1, 2, 3, 4, 5, 6])
+  color           String   @default("#3B82F6")
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  defaultFor      Employee[]           @relation("DefaultShift")
+  rosterEntries   RosterEntry[]
+  attendance      AttendanceRecord[]
+  registers       AttendanceRegister[]
+  handovers       ShiftHandover[]
+
+  @@unique([siteId, code])
+}
+
+/// One scheduled position: employee X works shift Y at site Z on a date. (ShiftAssignments)
+model RosterEntry {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id])
+  shiftId        String
+  shift          Shift    @relation(fields: [shiftId], references: [id])
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  locationId     String?
+  location       Location? @relation(fields: [locationId], references: [id])
+  workDate       DateTime @db.Date
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  @@unique([employeeId, shiftId, workDate])
+  @@index([siteId, workDate])
+}
+
+// ───────────────────────────── Attendance ─────────────────────────────
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  HALF_DAY
+  WEEKLY_OFF
+  HOLIDAY
+  ON_DUTY
+  NOT_SCHEDULED
+  PENDING
+  INCOMPLETE
+}
+
+enum EntryMode {
+  LIVE
+  MANUAL
+  OFFLINE
+  CORRECTION
+  IMPORT
+}
+
+model AttendanceRecord {
+  id               String           @id @default(cuid())
+  organizationId   String
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  siteId           String
+  site             Site             @relation(fields: [siteId], references: [id])
+  shiftId          String
+  shift            Shift            @relation(fields: [shiftId], references: [id])
+  employeeId       String
+  employee         Employee         @relation(fields: [employeeId], references: [id])
+  /// Shift start date in the site's timezone. A 22:00–06:00 shift's checkout stays on this date.
+  workDate         DateTime         @db.Date
+  status           AttendanceStatus @default(PENDING)
+  scheduledStart   DateTime
+  scheduledEnd     DateTime
+  checkInAt        DateTime?
+  checkOutAt       DateTime?
+  workedMinutes    Int?
+  overtimeMinutes  Int              @default(0)
+  lateMinutes      Int              @default(0)
+  isLate           Boolean          @default(false)
+  remarks          String?
+  entryMode        EntryMode        @default(LIVE)
+  manualReason     String?
+  markedById       String?
+  markedBy         User?            @relation("MarkedBy", fields: [markedById], references: [id])
+  registerId       String?
+  register         AttendanceRegister? @relation(fields: [registerId], references: [id])
+  /// Client-generated id when the record was first captured offline.
+  offlineClientId  String?
+  deviceRecordedAt DateTime?
+  syncedAt         DateTime?
+  version          Int              @default(1)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  corrections      AttendanceCorrection[]
+
+  /// Business rule 1: no duplicate attendance for the same employee, shift and work date.
+  @@unique([employeeId, shiftId, workDate])
+  @@index([organizationId, workDate])
+  @@index([siteId, workDate, shiftId])
+}
+
+enum RegisterStatus {
+  OPEN
+  SUBMITTED
+  APPROVED
+  LOCKED
+}
+
+/// Daily register for a site + date + shift; the unit supervisors submit and admins approve.
+model AttendanceRegister {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  siteId         String
+  site           Site           @relation(fields: [siteId], references: [id])
+  shiftId        String
+  shift          Shift          @relation(fields: [shiftId], references: [id])
+  workDate       DateTime       @db.Date
+  status         RegisterStatus @default(OPEN)
+  submittedById  String?
+  submittedAt    DateTime?
+  summary        Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  records        AttendanceRecord[]
+  approvals      AttendanceApproval[]
+
+  @@unique([siteId, shiftId, workDate])
+}
+
+model AttendanceApproval {
+  id         String   @id @default(cuid())
+  registerId String
+  register   AttendanceRegister @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  action     String   // SUBMITTED | APPROVED | REJECTED | LOCKED | REOPENED
+  actorId    String
+  actorName  String
+  note       String?
+  createdAt  DateTime @default(now())
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model AttendanceCorrection {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  attendanceId   String
+  attendance     AttendanceRecord @relation(fields: [attendanceId], references: [id])
+  requestedById  String
+  requestedBy    User             @relation("CorrectionRequester", fields: [requestedById], references: [id])
+  reason         String
+  previousValues Json
+  proposedValues Json
+  status         CorrectionStatus @default(PENDING)
+  reviewedById   String?
+  reviewedBy     User?            @relation("CorrectionReviewer", fields: [reviewedById], references: [id])
+  reviewNote     String?
+  reviewedAt     DateTime?
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, status])
+}
+
+model ShiftHandover {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id])
+  siteId                String
+  site                  Site     @relation(fields: [siteId], references: [id])
+  shiftId               String
+  shift                 Shift    @relation(fields: [shiftId], references: [id])
+  workDate              DateTime @db.Date
+  outgoingSupervisorId  String
+  outgoingName          String
+  incomingSupervisorId  String?
+  incomingName          String?
+  handoverAt            DateTime @default(now())
+  presentCount          Int      @default(0)
+  presentEmployees      Json
+  missingEmployees      Json
+  remarks               String?
+  pendingIssues         String?
+  status                String   @default("PENDING") // PENDING | CONFIRMED
+  confirmedAt           DateTime?
+  createdAt             DateTime @default(now())
+
+  @@index([siteId, workDate])
+}
+
+model LeaveRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  startDate      DateTime @db.Date
+  endDate        DateTime @db.Date
+  leaveType      String   @default("CASUAL")
+  reason         String?
+  status         String   @default("APPROVED")
+  recordedById   String?
+  createdAt      DateTime @default(now())
+
+  @@index([employeeId, startDate])
+}
+
+model Holiday {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  siteId         String?
+  site           Site?    @relation(fields: [siteId], references: [id])
+  date           DateTime @db.Date
+  name           String
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, siteId, date])
+}
+
+model WeeklyOffRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  siteId         String?
+  dayOfWeek      Int
+  description    String?
+  createdAt      DateTime @default(now())
+}
+
+model MusterRoll {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id])
+  year           Int
+  month          Int
+  keeperName     String
+  keeperUserId   String
+  status         String   @default("CERTIFIED")
+  totals         Json
+  createdAt      DateTime @default(now())
+
+  @@index([siteId, year, month])
+}
+
+// ───────────────────────────── Gate register ─────────────────────────────
+
+model GateEntry {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  siteId         String
+  site           Site      @relation(fields: [siteId], references: [id])
+  visitorName    String
+  company        String?
+  visitorType    String    // VISITOR | VENDOR | CONTRACTOR | OFFICIAL | DELIVERY
+  mobile         String?
+  purpose        String
+  vehicleNumber  String?
+  personToMeet   String?
+  entryAt        DateTime  @default(now())
+  exitAt         DateTime?
+  recordedById   String
+  recordedByName String
+  remarks        String?
+  createdAt      DateTime  @default(now())
+
+  @@index([siteId, entryAt])
+}
+
+// ───────────────────────────── Imports / exports ─────────────────────────────
+
+model ImportJob {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdById    String
+  fileName       String
+  status         String   @default("UPLOADED") // UPLOADED | VALIDATED | PROCESSING | COMPLETED | FAILED
+  headers        Json
+  rows           Json
+  mapping        Json?
+  mode           String?
+  totalRows      Int      @default(0)
+  validRows      Int      @default(0)
+  createdCount   Int      @default(0)
+  updatedCount   Int      @default(0)
+  skippedCount   Int      @default(0)
+  failedCount    Int      @default(0)
+  result         Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  errors         ImportError[]
+}
+
+model ImportError {
+  id        String    @id @default(cuid())
+  jobId     String
+  job       ImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  rowNumber Int
+  field     String?
+  severity  String    // ERROR | WARNING
+  message   String
+}
+
+model ExportJob {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdById    String
+  createdByName  String
+  reportType     String
+  format         String
+  filters        Json
+  rowCount       Int      @default(0)
+  status         String   @default("COMPLETED")
+  createdAt      DateTime @default(now())
+}
+
+// ───────────────────────────── Notifications, audit, sync ─────────────────────────────
+
+model Notification {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  title          String
+  body           String
+  link           String?
+  severity       String    @default("INFO") // INFO | WARNING | CRITICAL | SUCCESS
+  dedupeKey      String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+}
+
+/// Append-only. A database trigger rejects UPDATE and DELETE.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String?
+  userName       String?
+  userRole       String?
+  action         String
+  entity         String
+  entityId       String?
+  previousValues Json?
+  newValues      Json?
+  reason         String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([entity, entityId])
+}
+
+model OfflineSyncRecord {
+  id               String   @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  clientId         String   @unique
+  userId           String
+  siteId           String
+  employeeId       String
+  shiftId          String
+  workDate         DateTime @db.Date
+  action           String
+  payload          Json
+  deviceRecordedAt DateTime
+  syncedAt         DateTime @default(now())
+  result           String   // SYNCED | CONFLICT | FAILED
+  message          String?
+  attendanceId     String?
+}
