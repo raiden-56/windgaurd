@@ -470,7 +470,7 @@ function RosterTab() {
           <Button variant="outline" size="icon" aria-label="Previous week" onClick={() => setWeek(addDaysISO(week, -7))}>
             <ChevronLeft />
           </Button>
-          <span className="min-w-44 text-center text-[13px] font-medium tabular">
+          <span className="min-w-36 text-center text-[13px] font-medium tabular sm:min-w-44">
             {fmtDate(week, { day: "2-digit", month: "short" })} – {fmtDate(to, { day: "2-digit", month: "short", year: "numeric" })}
           </span>
           <Button variant="outline" size="icon" aria-label="Next week" onClick={() => setWeek(addDaysISO(week, 7))}>

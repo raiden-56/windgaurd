@@ -177,6 +177,11 @@
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
+  /* Grid items default to min-width: auto, so a long name, table or chart would widen its
+     column past the screen on phones. Let tracks shrink; content truncates or scrolls inside. */
+  .grid > * {
+    min-width: 0;
+  }
   body {
     background: var(--bg);
     color: var(--fg);

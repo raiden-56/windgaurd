@@ -140,7 +140,8 @@ export function Tabs<T extends string>({ value, onChange, items, className, size
 /** Pill segmented control — used for quick period / view switching. */
 export function Segmented<T extends string>({ value, onChange, items, className, ariaLabel }: { value: T; onChange: (v: T) => void; items: { value: T; label: React.ReactNode }[]; className?: string; ariaLabel?: string }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className={cn("inline-flex items-center rounded-md border border-line bg-sunken p-0.5", className)}>
+    // Never wider than its container: on narrow screens the options scroll sideways inside the control.
+    <div role="radiogroup" aria-label={ariaLabel} className={cn("no-scrollbar inline-flex max-w-full items-center overflow-x-auto rounded-md border border-line bg-sunken p-0.5", className)}>
       {items.map((it) => {
         const active = it.value === value;
         return (
@@ -150,7 +151,7 @@ export function Segmented<T extends string>({ value, onChange, items, className,
             role="radio"
             aria-checked={active}
             onClick={() => onChange(it.value)}
-            className={cn("relative h-7 rounded-[5px] px-2.5 text-[13px] font-medium transition-colors", active ? "text-fg" : "text-muted hover:text-fg")}
+            className={cn("relative h-7 shrink-0 whitespace-nowrap rounded-[5px] px-2.5 text-[13px] font-medium transition-colors", active ? "text-fg" : "text-muted hover:text-fg")}
           >
             {active && <motion.span layoutId={`seg-${items.map((i) => i.value).join("")}`} className="absolute inset-0 rounded-[5px] border border-line bg-surface shadow-sm" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
             <span className="relative">{it.label}</span>
