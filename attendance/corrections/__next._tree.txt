@@ -1,0 +1,8 @@
+:HL["/windgaurd/_next/static/chunks/0m4b0yxcr7n9q.css","style"]
+:HL["/windgaurd/_next/static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/windgaurd/_next/static/media/82450a180bcad83c-s.p.0p-wng2nn8o-p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+4:[["children",{"s":"__PAGE__","h":160}]]
+3:[["children",{"s":"corrections","h":96,"c":"$Q4"}]]
+2:[["children",{"s":"attendance","h":96,"c":"$Q3"}]]
+1:[["children",{"s":"(app)","h":96,"c":"$Q2"}]]
+0:{"b":"fRRcEmDCzkYTfd4YLDs2w","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
