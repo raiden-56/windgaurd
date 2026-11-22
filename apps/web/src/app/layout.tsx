@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { themeScript } from "@/components/shell/theme";
+import { withBase } from "@/lib/base";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -14,8 +15,8 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "WINDGUARD", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
   icons: {
-    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192" }],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    icon: [{ url: withBase("/icons/icon.svg"), type: "image/svg+xml" }, { url: withBase("/icons/icon-192.png"), sizes: "192x192" }],
+    apple: [{ url: withBase("/icons/apple-touch-icon.png"), sizes: "180x180" }],
   },
   robots: { index: false, follow: false },
 };

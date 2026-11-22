@@ -101,7 +101,7 @@ export default function EmployeesPage() {
         header: "Employee name",
         enableHiding: false,
         cell: ({ row: r }) => (
-          <Link href={`/employees/${r.original.id}`} className="flex items-center gap-2.5 font-medium hover:text-primary-ink" onClick={(e) => e.stopPropagation()}>
+          <Link href={`/employees/view?id=${r.original.id}`} className="flex items-center gap-2.5 font-medium hover:text-primary-ink" onClick={(e) => e.stopPropagation()}>
             <Avatar name={r.original.fullName} className="size-7 text-[10px]" />
             {r.original.fullName}
           </Link>
@@ -276,13 +276,13 @@ export default function EmployeesPage() {
           onRowSelectionChange={setSelection}
           columnVisibility={visibility}
           onColumnVisibilityChange={setVisibility}
-          onRowClick={(r) => router.push(`/employees/${r.id}`)}
+          onRowClick={(r) => router.push(`/employees/view?id=${r.id}`)}
           emptyTitle="No employees found"
           emptyDescription="Adjust the filters, add an employee or import from Excel."
         />
         {q.data && <Pagination page={page} pageSize={pageSize} total={q.data.total} onPage={setPage} onPageSize={(n) => (setPageSize(n), setPage(1))} />}
       </Card>
-      <EmployeeSheet open={createOpen} onOpenChange={setCreateOpen} onSaved={(id) => router.push(`/employees/${id}`)} />
+      <EmployeeSheet open={createOpen} onOpenChange={setCreateOpen} onSaved={(id) => router.push(`/employees/view?id=${id}`)} />
       <BulkDialog
         action={bulk}
         ids={selectedIds}

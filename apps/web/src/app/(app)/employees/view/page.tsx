@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Building2, CalendarOff, ChevronLeft, Download, History, MapPin, Pencil, Phone, Plane, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EmployeeSheet } from "@/components/employee-form";
@@ -69,7 +69,7 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export default function EmployeeDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useSearchParams().get("id") ?? "";
   const router = useRouter();
   const { can } = useSession();
   const qc = useQueryClient();

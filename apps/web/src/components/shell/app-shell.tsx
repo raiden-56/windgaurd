@@ -22,9 +22,11 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { DemoChip } from "@/components/demo-gate";
 import { Avatar } from "@/components/ui/display";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger, Sheet, Tip } from "@/components/ui/overlay";
 import { api } from "@/lib/api";
+import { DEMO } from "@/lib/base";
 import { useAutoSync, useOnline, useQueueCounts } from "@/lib/connectivity";
 import { ROLE_LABEL } from "@/lib/format";
 import { useSession } from "@/lib/session";
@@ -230,6 +232,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
           <SiteSwitcher />
         </div>
         <div className="ml-auto flex items-center gap-1.5">
+          {DEMO && <DemoChip />}
           <ConnectivityChip />
           <ThemeToggle />
           <Tip content="Notifications">

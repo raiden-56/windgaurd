@@ -33,6 +33,18 @@
         "apps/web"
       ],
       "port": 3100
+    },
+    {
+      "name": "pages-public",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/demo/scripts/serve.mjs", "apps/web/public", "/windgaurd", "3200"],
+      "port": 3200
+    },
+    {
+      "name": "pages",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/demo/scripts/serve.mjs", "apps/web/out", "/windgaurd", "3200"],
+      "port": 3200
     }
   ]
 }

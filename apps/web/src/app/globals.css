@@ -229,7 +229,24 @@
   }
 }
 
+/* Indeterminate progress on the browser-demo preparation screen. */
+.wg-demo-progress {
+  animation: wg-demo-progress 1.4s ease-in-out infinite;
+}
+@keyframes wg-demo-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .wg-demo-progress {
+    width: 100%;
+    opacity: 0.6;
+  }
   *,
   *::before,
   *::after {

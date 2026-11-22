@@ -1,5 +1,11 @@
 "use client";
 
+import { DEMO } from "./base";
+import { demoFetch } from "./demo-backend";
+
+/** In the static demo build, /api requests are answered by the in-browser backend instead of the network. */
+const apiFetch: (url: string, init?: RequestInit) => Promise<Response> = DEMO ? demoFetch : (url, init) => fetch(url, init);
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -61,7 +67,7 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export async function api<T = any>(path: string, opts: { method?: string; body?: unknown; query?: Query; signal?: AbortSignal } = {}): Promise<T> {
-  const res = await fetch(`/api${path}${qs(opts.query)}`, {
+  const res = await apiFetch(`/api${path}${qs(opts.query)}`, {
     method: opts.method ?? (opts.body !== undefined ? "POST" : "GET"),
     credentials: "include",
     headers: headers(opts.body !== undefined),
@@ -73,13 +79,13 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 }
 
 export async function upload<T = any>(path: string, form: FormData): Promise<T> {
-  const res = await fetch(`/api${path}`, { method: "POST", credentials: "include", headers: headers(false), body: form });
+  const res = await apiFetch(`/api${path}`, { method: "POST", credentials: "include", headers: headers(false), body: form });
   return handle<T>(res);
 }
 
 /** Downloads a file produced by the API (exports, templates, error reports). */
 export async function download(path: string, query?: Query, fallbackName = "download") {
-  const res = await fetch(`/api${path}${qs(query)}`, { credentials: "include", headers: headers(false) });
+  const res = await apiFetch(`/api${path}${qs(query)}`, { credentials: "include", headers: headers(false) });
   if (!res.ok) await handle(res);
   const blob = await res.blob();
   const cd = res.headers.get("content-disposition") ?? "";

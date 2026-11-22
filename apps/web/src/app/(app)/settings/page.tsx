@@ -11,6 +11,7 @@ import { Badge, Card, CardHeader, EmptyState, PageHeader, Skeleton, Tabs } from 
 import { Field, Input, Select, Switch } from "@/components/ui/field";
 import { Dialog, useConfirm } from "@/components/ui/overlay";
 import { api, errorMessage } from "@/lib/api";
+import { withBase } from "@/lib/base";
 import { fmtDate, fmtDateTime, relTime, ROLE_LABEL, STATUS } from "@/lib/format";
 import { useSession } from "@/lib/session";
 
@@ -181,7 +182,7 @@ function Security() {
   const signOutAll = async () => {
     if ((await confirm({ title: "Sign out of every device?", description: "Including this one. Offline entries waiting on other devices will need a fresh sign-in to sync.", danger: true, confirmLabel: "Sign out everywhere" })) === false) return;
     await api("/auth/logout-all", { method: "POST" }).catch(() => undefined);
-    window.location.href = "/login";
+    window.location.href = withBase("/login");
   };
 
   return (

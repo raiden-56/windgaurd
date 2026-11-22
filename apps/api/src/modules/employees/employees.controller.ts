@@ -287,7 +287,7 @@ export class EmployeesController {
         type: 'employee.assignment_changed',
         title: 'Employee assigned to your site',
         body: `${after.fullName} (${after.employeeCode}) has been assigned to your site.`,
-        link: `/employees/${after.id}`,
+        link: `/employees/view?id=${after.id}`,
       });
     }
     return after;

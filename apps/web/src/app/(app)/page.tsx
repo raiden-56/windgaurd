@@ -363,7 +363,7 @@ function SiteWorkforce({ data }: { data: Dashboard }) {
             {data.siteWorkforce.map((s) => (
               <tr key={s.siteId} className="border-b border-line last:border-0 hover:bg-surface-2">
                 <td className="px-4 py-2.5 sm:px-5">
-                  <Link href={`/sites/${s.siteId}`} className="font-medium text-fg hover:text-primary-ink">
+                  <Link href={`/sites/view?id=${s.siteId}`} className="font-medium text-fg hover:text-primary-ink">
                     {s.name}
                   </Link>
                   <SegmentBar

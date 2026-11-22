@@ -10,3 +10,6 @@ apps/api/uploads
 .api.log
 .next-prod
 apps/api/src/generated
+meta.json
+apps/web/public/demo
+apps/web/out

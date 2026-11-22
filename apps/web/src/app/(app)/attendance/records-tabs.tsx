@@ -62,7 +62,7 @@ export function RecordsTab() {
       header: "Employee",
       cell: ({ row: r }) => (
         <div>
-          <Link href={`/employees/${r.original.employeeId}`} className="font-medium hover:text-primary-ink">
+          <Link href={`/employees/view?id=${r.original.employeeId}`} className="font-medium hover:text-primary-ink">
             {r.original.employee.fullName}
           </Link>
           <div className="text-xs text-muted tabular">{r.original.employee.employeeCode}</div>

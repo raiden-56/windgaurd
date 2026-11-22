@@ -81,7 +81,7 @@ export default function SitesPage() {
                 const t = s.todayStats;
                 const present = (t.PRESENT ?? 0) + (t.ON_DUTY ?? 0) + (t.HALF_DAY ?? 0) + (t.INCOMPLETE ?? 0);
                 return (
-                  <Link key={s.id} href={`/sites/${s.id}`} className="group block">
+                  <Link key={s.id} href={`/sites/view?id=${s.id}`} className="group block">
                     <Card className="h-full p-4 transition-[border-color,box-shadow] group-hover:border-line-strong group-hover:shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">

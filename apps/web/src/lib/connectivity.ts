@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { withBase } from "./base";
 import { queueCounts, syncNow } from "./offline";
 
 export function useOnline() {
@@ -51,7 +52,7 @@ export function useAutoSync() {
         if (r.synced || r.conflicts) {
           qc.invalidateQueries({ queryKey: ["register"] });
           qc.invalidateQueries({ queryKey: ["dashboard"] });
-          if (r.conflicts) toast.warning(`${r.synced} offline record(s) synchronized · ${r.conflicts} need review`, { action: { label: "Review", onClick: () => (window.location.href = "/attendance/sync") } });
+          if (r.conflicts) toast.warning(`${r.synced} offline record(s) synchronized · ${r.conflicts} need review`, { action: { label: "Review", onClick: () => (window.location.href = withBase("/attendance/sync")) } });
           else toast.success(`${r.synced} offline record(s) synchronized`);
         }
       } catch {

@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
                 {a.topAbsentees.map((e: any) => (
                   <tr key={e.employeeId} className="border-b border-line last:border-0">
                     <td className="px-5 py-2">
-                      <Link href={`/employees/${e.employeeId}`} className="font-medium hover:text-primary-ink">
+                      <Link href={`/employees/view?id=${e.employeeId}`} className="font-medium hover:text-primary-ink">
                         {e.fullName}
                       </Link>
                       <span className="ml-1.5 text-xs tabular text-muted">{e.employeeCode}</span>

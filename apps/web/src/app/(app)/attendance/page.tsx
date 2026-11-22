@@ -802,7 +802,7 @@ function DesktopRow({
       <td className={cn("border-b border-line px-3 py-2", !canMark && "pl-4")}>
         <div className="flex items-center gap-2">
           <div className="min-w-0">
-            <Link href={`/employees/${row.employeeId}`} className="block truncate font-medium text-fg hover:text-primary-ink">
+            <Link href={`/employees/view?id=${row.employeeId}`} className="block truncate font-medium text-fg hover:text-primary-ink">
               {row.fullName}
             </Link>
             <div className="flex items-center gap-1.5 text-xs text-muted">
